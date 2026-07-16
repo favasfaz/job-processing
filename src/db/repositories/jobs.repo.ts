@@ -73,7 +73,10 @@ export class JobsRepository {
   }
 
   async scheduleRetry(id: string, error: string, retryCount: number, delayMs: number): Promise<void> {
-    await query('UPDATE jobs SET status = $1, retry_count = $2, last_error = $3, delay_until = NOW() + ($4 || " milliseconds")::interval, updated_at = NOW() WHERE id = $5', ['QUEUED', retryCount, error, delayMs, id]);
+    await query(
+      `UPDATE jobs SET status = $1, retry_count = $2, last_error = $3, delay_until = NOW() + ($4 || ' milliseconds')::interval, updated_at = NOW() WHERE id = $5`,
+      ['QUEUED', retryCount, error, delayMs, id],
+    );
   }
 
   async cancel(id: string): Promise<void> {
