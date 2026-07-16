@@ -1,0 +1,9 @@
+CREATE TABLE IF NOT EXISTS workers (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  hostname VARCHAR(255) NOT NULL,
+  pid INT NOT NULL,
+  last_heartbeat TIMESTAMPTZ NOT NULL DEFAULT now(),
+  status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE','STOPPED')),
+  started_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  jobs_processed BIGINT NOT NULL DEFAULT 0
+);
