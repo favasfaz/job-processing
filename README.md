@@ -54,6 +54,12 @@ Main endpoints:
 
 - Runtime: Node.js + TypeScript for fast iteration and type safety.
 - Persistence: PostgreSQL holds durable job records and audit information.
-- Queueing: Redis used for transient/real-time primitives (fast lists, rate limits, delayed/priority logic).
+- Queueing: Redis is available for transient/real-time primitives, but the worker currently claims work directly from Postgres for the current implementation. The queue flow is:
+  - job creation inserts a `QUEUED` record in PostgreSQL with payload, priority, delay metadata, and retry settings.
+  - the worker polls Postgres using `JobsRepository.claimNextJob(...)`, atomically moves one eligible `QUEUED` job to `PROCESSING`, and returns it.
+  - processing is simulated by logging the payload; a payload containing `simulateFailure` forces a retry path.
+  - on success the job is marked `COMPLETED`; on failure the job increments `retry_count` and either requeues with a delay or is marked `FAILED` after `max_retries`.
+  - retry delays use `BACKOFF_BASE_MS` and `BACKOFF_MAX_MS`, and `delay_until` prevents immediate reprocessing.
+  - when no job is available, the worker idles for `WORKER_IDLE_MS` before polling again, avoiding tight spinning while keeping the queue responsive.
 - Error handling: Centralized `errorHandler` maps `DomainError` subclasses to HTTP responses and logs unexpected errors.
 - Debugging: Prefer running inside Docker and attaching VS Code to the Node inspector for parity with production container behavior.
